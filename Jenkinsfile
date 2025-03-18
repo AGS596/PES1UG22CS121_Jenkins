@@ -1,34 +1,36 @@
 pipeline {
-    agent any
+    agent {
+        docker {
+            image 'node:14'
+        }
+    }
     stages {
         stage('Clone repository') {
             steps {
-                checkout([$class: 'GitSCM', 
-                    branches: [[name: 'main']], 
-                    userRemoteConfigs: [[url: 'https://github.com/4ritr0/PES1UG22CS106_Jenkins.git']]
-                ])
+                git branch: 'main',
+                    url: 'https://github.com/<user>/<repo>.git'
             }
         }
-        stage('Build') {
+        stage('Install dependencies') {
             steps {
-                build 'PES1UG22CS106-1'
-                sh 'g++ ./main/hello.cpp -o ./output'
+                sh 'npm install'
             }
         }
-        stage('Test') {
+        stage('Build application') {
             steps {
-                sh './output'
+                sh 'npm run build'
             }
         }
-        stage('Deploy') {
+        stage('Test application') {
             steps {
-                echo 'deploy'
+                sh 'npm test'
             }
         }
-    }
-    post {
-        failure {
-            error 'Pipeline failed'
+        stage('Push Docker image') {
+            steps {
+                sh 'docker build -t <user>/<image>:$BUILD_NUMBER .'
+                sh 'docker push <user>/<image>:$BUILD_NUMBER'
+            }
         }
     }
 }
